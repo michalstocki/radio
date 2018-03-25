@@ -9,5 +9,7 @@
   },
   "author": "Michał Stocki",
   "license": "MIT",
-  "dependencies": {}
+  "dependencies": {
+    "basic-auth-header": "^1.0.1"
+  }
 }
