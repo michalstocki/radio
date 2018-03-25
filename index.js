@@ -30,20 +30,26 @@ rl.on('line', (input) => {
       process.exit(0);
       break;
     case 'next':
-      handleNext();
+      console.log('Playing next station');
+      sendCommand('pl_next');
+      break;
+    case 'stop':
+      console.log('Stopping');
+      sendCommand('pl_stop');
+      break;
+    case 'play':
+      console.log('Playing');
+      sendCommand('pl_play');
       break;
     default:
       console.log(`Unknown command: "${input}".
 Available commands:
   exit – Closes the program
-  next – Switch to the next program`);
+  next – Switch to the next program
+  stop – Stop playing
+  play – Start playing`);
   }
 });
-
-function handleNext() {
-  console.log('Playing next station');
-  sendCommand('pl_next');
-}
 
 function sendCommand(commandName) {
   const requestOptions = {
