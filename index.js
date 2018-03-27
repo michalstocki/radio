@@ -1,8 +1,9 @@
 const readline = require('readline');
 const { exec } = require('child_process');
-const {join} = require('path');
+const { join } = require('path');
 const http = require('http');
 const authHeader = require('basic-auth-header');
+const { isMac } = require('is-os');
 
 const HTTP_PASSWORD = 'aaa';
 
@@ -10,7 +11,7 @@ const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
-const vlc = '/Applications/VLC.app/Contents/MacOS/VLC';
+const vlc = getVLCCommand();
 const playlistPath = join(__dirname, 'programs.m3u');
 
 const vlcProcess = exec(`${vlc} -I http --http-password ${HTTP_PASSWORD} file://${playlistPath}`, (error, stdout, stderr) => {
@@ -68,4 +69,11 @@ function sendCommand(commandName) {
     console.error(`problem with request: ${e.message}`);
   });
   req.end();
+}
+
+function getVLCCommand() {
+  if (isMac()) {
+    return '/Applications/VLC.app/Contents/MacOS/VLC';
+  }
+  return 'vlc';
 }
