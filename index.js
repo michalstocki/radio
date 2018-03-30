@@ -6,6 +6,8 @@ const authHeader = require('basic-auth-header');
 const { isMac } = require('is-os');
 
 const HTTP_PASSWORD = 'aaa';
+let isPlaying = true;
+let lastPress = null;
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -77,3 +79,35 @@ function getVLCCommand() {
   }
   return 'vlc';
 }
+
+
+var buttons = require('rpi-gpio-buttons')([12]);
+
+buttons.on('clicked', function (pin) {
+	console.log('--- clicked');
+  if (isPlaying) {
+    console.log('Stopping');
+    sendCommand('pl_stop');
+    isPlaying = false;
+  } else {
+	console.log('Playing');
+    sendCommand('pl_play');
+    isPlaying = true;
+  }
+});
+
+buttons.on('pressed', function (pin) {
+	console.log('--- pressed');
+  lastPress = Date.now();
+});
+
+buttons.on('released', function (pin) {
+	console.log('--- released');
+  if (lastPress && Date.now() - lastPress >= 2000) {
+	  console.log('Playing next station');
+      sendCommand('pl_next');
+  }
+  lastPress = null;
+});
+
+console.log('listening 3 click events');

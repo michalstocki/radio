@@ -11,6 +11,7 @@
   "license": "MIT",
   "dependencies": {
     "basic-auth-header": "^1.0.1",
-    "is-os": "^1.0.1"
+    "is-os": "^1.0.1",
+    "rpi-gpio-buttons": "^1.0.4"
   }
 }
