@@ -6,52 +6,21 @@ const authHeader = require('basic-auth-header');
 const { isMac } = require('is-os');
 
 const HTTP_PASSWORD = 'aaa';
+const SKIP_PROGRAM_AFTER = 1500;
 let isPlaying = true;
 let lastPress = null;
+let skipProgramTimeout = null;
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
 const vlc = getVLCCommand();
 const playlistPath = join(__dirname, 'programs.m3u');
 
-const vlcProcess = exec(`${vlc} -I http --http-password ${HTTP_PASSWORD} file://${playlistPath}`, (error, stdout, stderr) => {
+exec(`${vlc} -I http --http-password ${HTTP_PASSWORD} file://${playlistPath}`, (error, stdout, stderr) => {
   if (error) {
     console.error(`exec error: ${error}`);
     return;
   }
   console.log(`stdout: ${stdout}`);
   console.log(`stderr: ${stderr}`);
-});
-
-rl.on('line', (input) => {
-  switch (input) {
-    case 'exit':
-      rl.close();
-      vlcProcess.kill();
-      process.exit(0);
-      break;
-    case 'next':
-      console.log('Playing next station');
-      sendCommand('pl_next');
-      break;
-    case 'stop':
-      console.log('Stopping');
-      sendCommand('pl_stop');
-      break;
-    case 'play':
-      console.log('Playing');
-      sendCommand('pl_play');
-      break;
-    default:
-      console.log(`Unknown command: "${input}".
-Available commands:
-  exit – Closes the program
-  next – Switch to the next program
-  stop – Stop playing
-  play – Start playing`);
-  }
 });
 
 function sendCommand(commandName) {
@@ -81,31 +50,34 @@ function getVLCCommand() {
 }
 
 
-var buttons = require('rpi-gpio-buttons')([12]);
+const buttons = require('rpi-gpio-buttons')([12]);
 
-buttons.on('clicked', function (pin) {
-	console.log('--- clicked');
-  if (isPlaying) {
-    console.log('Stopping');
-    sendCommand('pl_stop');
-    isPlaying = false;
-  } else {
-	console.log('Playing');
-    sendCommand('pl_play');
-    isPlaying = true;
-  }
-});
-
-buttons.on('pressed', function (pin) {
-	console.log('--- pressed');
+buttons.on('pressed', function(pin) {
+  console.log('--- pressed');
   lastPress = Date.now();
+  skipProgramTimeout = setTimeout(() => {
+    console.log('Playing next station');
+    sendCommand('pl_next');
+    skipProgramTimeout = null;
+  }, SKIP_PROGRAM_AFTER);
 });
 
-buttons.on('released', function (pin) {
-	console.log('--- released');
-  if (lastPress && Date.now() - lastPress >= 2000) {
-	  console.log('Playing next station');
-      sendCommand('pl_next');
+buttons.on('released', function(pin) {
+  console.log('--- released');
+  if (lastPress && Date.now() - lastPress <= 1000) {
+    if (isPlaying) {
+      console.log('Stopping');
+      sendCommand('pl_stop');
+      isPlaying = false;
+    } else {
+      console.log('Playing');
+      sendCommand('pl_play');
+      isPlaying = true;
+    }
+  }
+  if (skipProgramTimeout) {
+    clearTimeout(skipProgramTimeout);
+    skipProgramTimeout = null;
   }
   lastPress = null;
 });
